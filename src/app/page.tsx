@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Article, CATEGORIES, RESEARCH_CATEGORIES } from '@/types';
+import { Article, CATEGORIES, RESEARCH_CATEGORIES } from '../types';
 import { Clock, ExternalLink, Tag, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Source, Article } from '@/types';
+import { Source, Article } from '../../types';
 import { 
   Settings, Lock, RefreshCw, Plus, Trash2, Power, PowerOff, 
   ExternalLink, Edit2, Star, StarOff, BarChart3, Activity, 
