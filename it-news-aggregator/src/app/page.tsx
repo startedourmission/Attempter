@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Article, CATEGORIES } from '@/types';
 import { Clock, ExternalLink, Tag } from 'lucide-react';
 import { format } from 'date-fns';
@@ -45,22 +46,6 @@ export default function HomePage() {
     }
   };
 
-  const handleCollectNews = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/news', { method: 'POST' });
-      const result = await response.json();
-      
-      if (result.success) {
-        // 뉴스 수집 후 목록 새로고침
-        await fetchArticles();
-      } else {
-        setError(result.error || 'Failed to collect news');
-      }
-    } catch (err) {
-      setError('Failed to collect news');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -71,13 +56,12 @@ export default function HomePage() {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               IT 뉴스 수집기
             </h1>
-            <button
-              onClick={handleCollectNews}
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            <Link
+              href="/admin"
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white text-sm"
             >
-              {loading ? '수집 중...' : '뉴스 수집'}
-            </button>
+              관리자
+            </Link>
           </div>
         </div>
       </header>
