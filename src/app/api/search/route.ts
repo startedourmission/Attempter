@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const sourceIds = sourceData?.map(s => s.id) || [];
     
     // 검색 쿼리 생성
-    let searchConditions = [
+    const searchConditions = [
       `title.ilike.%${searchTerm}%`,
       `description.ilike.%${searchTerm}%`,
       `tags.cs.{${searchTerm}}`

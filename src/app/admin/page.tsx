@@ -6,7 +6,7 @@ import { Source, Article } from '@/types';
 import { 
   Settings, Lock, RefreshCw, Plus, Trash2, Power, PowerOff, 
   ExternalLink, Edit2, Star, StarOff, BarChart3, Activity, 
-  Clock, CheckCircle, AlertCircle, Database, FileText, Eye, EyeOff 
+  Clock, CheckCircle, AlertCircle, Database, FileText
 } from 'lucide-react';
 
 function decodeHtmlEntities(text: string): string {
@@ -48,7 +48,15 @@ export default function AdminPage() {
   // Data states
   const [sources, setSources] = useState<Source[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<Array<{
+    id: string;
+    source_name: string;
+    success: boolean;
+    new_articles_count: number;
+    error_message?: string;
+    execution_time?: number;
+    created_at: string;
+  }>>([]);
   const [stats, setStats] = useState({
     totalArticles: 0,
     totalSources: 0,

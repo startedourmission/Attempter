@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { parseRSSFeed } from '@/lib/rss-parser';
-import { Article } from '@/types';
+// import { Article } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -300,7 +300,7 @@ export async function PATCH(request: NextRequest) {
     }
     
     // 업데이트할 필드들 구성
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString()
     };
     
