@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Article, CATEGORIES } from '@/types';
 import { Clock, ExternalLink, Tag } from 'lucide-react';
 import { format } from 'date-fns';
@@ -52,16 +51,10 @@ export default function HomePage() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-center items-center h-16">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              IT 뉴스 수집기
+              Toynbee News
             </h1>
-            <Link
-              href="/admin"
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white text-sm"
-            >
-              관리자
-            </Link>
           </div>
         </div>
       </header>

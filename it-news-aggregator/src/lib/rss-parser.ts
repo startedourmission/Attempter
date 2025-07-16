@@ -3,6 +3,25 @@ import { Article } from '@/types';
 
 const parser = new Parser();
 
+function decodeHtmlEntities(text: string): string {
+  const htmlEntities: { [key: string]: string } = {
+    '&apos;': "'",
+    '&quot;': '"',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&amp;': '&',
+    '&#39;': "'",
+    '&#x27;': "'",
+    '&#x2F;': '/',
+    '&#x60;': '`',
+    '&#x3D;': '='
+  };
+  
+  return text.replace(/&[#\w]+;/g, (entity) => {
+    return htmlEntities[entity] || entity;
+  });
+}
+
 export interface RSSParseResult {
   success: boolean;
   articles: Partial<Article>[];
@@ -16,15 +35,20 @@ export async function parseRSSFeed(
   try {
     const feed = await parser.parseURL(rssUrl);
     
-    const articles: Partial<Article>[] = feed.items.map(item => ({
-      title: item.title || '',
-      link: item.link || '',
-      description: item.contentSnippet || item.content,
-      published_at: item.pubDate || new Date().toISOString(),
-      source_id: sourceId,
-      category: categorizeArticle(item.title || ''),
-      tags: extractTags(item.title || '', item.contentSnippet || ''),
-    }));
+    const articles: Partial<Article>[] = feed.items.map(item => {
+      const title = decodeHtmlEntities(item.title || '');
+      const description = decodeHtmlEntities(item.contentSnippet || item.content || '');
+      
+      return {
+        title,
+        link: item.link || '',
+        description,
+        published_at: item.pubDate || new Date().toISOString(),
+        source_id: sourceId,
+        category: categorizeArticle(title),
+        tags: extractTags(title, description),
+      };
+    });
 
     return {
       success: true,

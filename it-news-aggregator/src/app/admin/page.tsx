@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Source } from '@/types';
-import { Plus, Trash2, Power, PowerOff, RefreshCw, Settings, Lock } from 'lucide-react';
+import { Source, Article } from '@/types';
+import { Plus, Trash2, Power, PowerOff, RefreshCw, Settings, Lock, Eye, EyeOff, ExternalLink } from 'lucide-react';
 
 interface NewsCollectionResult {
   source: string;
@@ -17,6 +17,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [sources, setSources] = useState<Source[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [showNewsSection, setShowNewsSection] = useState(false);
   const [loading, setLoading] = useState(false);
   const [collectionResults, setCollectionResults] = useState<NewsCollectionResult[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -30,6 +32,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchSources();
+      fetchArticles();
     }
   }, [isAuthenticated]);
 
@@ -143,6 +146,36 @@ export default function AdminPage() {
       }
     } catch (error) {
       alert('소스 추가 실패');
+    }
+  };
+
+  const fetchArticles = async () => {
+    try {
+      const response = await fetch('/api/news?limit=100');
+      const result = await response.json();
+      if (result.success) {
+        setArticles(result.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch articles:', error);
+    }
+  };
+
+  const deleteArticle = async (articleId: string) => {
+    if (!confirm('정말 이 뉴스를 삭제하시겠습니까?')) return;
+    
+    try {
+      const response = await fetch(`/api/news?id=${articleId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        fetchArticles();
+      } else {
+        alert('뉴스 삭제 실패');
+      }
+    } catch (error) {
+      alert('뉴스 삭제 중 오류 발생');
     }
   };
 
@@ -382,6 +415,81 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* News Management */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              뉴스 관리 ({articles.length}개)
+            </h2>
+            <button
+              onClick={() => setShowNewsSection(!showNewsSection)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            >
+              {showNewsSection ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showNewsSection ? '숨기기' : '보기'}
+            </button>
+          </div>
+
+          {showNewsSection && (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {articles.map((article) => (
+                <div
+                  key={article.id}
+                  className="flex items-start justify-between p-4 border rounded-lg dark:border-gray-600"
+                >
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 dark:text-white mb-1">
+                      {article.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+                      {article.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
+                      <span>
+                        {new Date(article.published_at).toLocaleDateString('ko-KR')}
+                      </span>
+                      {article.category && (
+                        <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                          {article.category}
+                        </span>
+                      )}
+                      {article.tags && article.tags.length > 0 && (
+                        <span className="text-gray-400">
+                          태그: {article.tags.slice(0, 2).join(', ')}
+                          {article.tags.length > 2 && '...'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 ml-4">
+                    <a
+                      href={article.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                    <button
+                      onClick={() => deleteArticle(article.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              {articles.length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  수집된 뉴스가 없습니다.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

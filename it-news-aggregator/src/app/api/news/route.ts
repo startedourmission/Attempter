@@ -151,3 +151,33 @@ export async function POST() {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const articleId = searchParams.get('id');
+    
+    if (!articleId) {
+      return NextResponse.json(
+        { success: false, error: 'Article ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    const { error } = await supabase
+      .from('articles')
+      .delete()
+      .eq('id', articleId);
+    
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete article' },
+      { status: 500 }
+    );
+  }
+}
