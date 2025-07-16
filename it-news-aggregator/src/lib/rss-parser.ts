@@ -4,22 +4,53 @@ import { Article } from '@/types';
 const parser = new Parser();
 
 function decodeHtmlEntities(text: string): string {
+  if (!text) return text;
+  
+  // 브라우저의 내장 HTML 디코딩을 시뮬레이션
   const htmlEntities: { [key: string]: string } = {
-    '&apos;': "'",
-    '&quot;': '"',
+    '&amp;': '&',
     '&lt;': '<',
     '&gt;': '>',
-    '&amp;': '&',
+    '&quot;': '"',
+    '&apos;': "'",
     '&#39;': "'",
     '&#x27;': "'",
+    '&#x2019;': "'",
+    '&#8217;': "'",
+    '&#x2018;': "'",
+    '&#8216;': "'",
+    '&#x201C;': '"',
+    '&#8220;': '"',
+    '&#x201D;': '"',
+    '&#8221;': '"',
+    '&#x2013;': '–',
+    '&#8211;': '–',
+    '&#x2014;': '—',
+    '&#8212;': '—',
+    '&#x2026;': '…',
+    '&#8230;': '…',
     '&#x2F;': '/',
     '&#x60;': '`',
     '&#x3D;': '='
   };
   
-  return text.replace(/&[#\w]+;/g, (entity) => {
-    return htmlEntities[entity] || entity;
+  // 먼저 명시적 매핑으로 변환
+  let decoded = text;
+  for (const [entity, char] of Object.entries(htmlEntities)) {
+    decoded = decoded.replace(new RegExp(entity, 'g'), char);
+  }
+  
+  // 숫자 엔티티 변환 (&#숫자; 형태)
+  decoded = decoded.replace(/&#(\d+);/g, (match, num) => {
+    return String.fromCharCode(parseInt(num, 10));
   });
+  
+  // 16진수 엔티티 변환 (&#x숫자; 형태)
+  decoded = decoded.replace(/&#x([0-9a-f]+);/gi, (match, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+  
+  return decoded;
 }
 
 export interface RSSParseResult {

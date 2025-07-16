@@ -6,6 +6,29 @@ import { Clock, ExternalLink, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
+function decodeHtmlEntities(text: string): string {
+  if (!text) return text;
+  
+  const htmlEntities: { [key: string]: string } = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&apos;': "'",
+    '&#39;': "'",
+    '&#x27;': "'",
+    '&#x2019;': "'",
+    '&#8217;': "'",
+  };
+  
+  let decoded = text;
+  for (const [entity, char] of Object.entries(htmlEntities)) {
+    decoded = decoded.replace(new RegExp(entity, 'g'), char);
+  }
+  
+  return decoded;
+}
+
 interface NewsWithSource extends Article {
   sources?: { name: string };
 }
@@ -130,13 +153,13 @@ export default function HomePage() {
                             rel="noopener noreferrer"
                             className="hover:text-blue-600 dark:hover:text-blue-400"
                           >
-                            {article.title}
+                            {decodeHtmlEntities(article.title)}
                           </a>
                         </h2>
                         
                         {article.description && (
                           <p className="text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                            {article.description}
+                            {decodeHtmlEntities(article.description)}
                           </p>
                         )}
                         

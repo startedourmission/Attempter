@@ -5,6 +5,29 @@ import Link from 'next/link';
 import { Source, Article } from '@/types';
 import { Plus, Trash2, Power, PowerOff, RefreshCw, Settings, Lock, Eye, EyeOff, ExternalLink } from 'lucide-react';
 
+function decodeHtmlEntities(text: string): string {
+  if (!text) return text;
+  
+  const htmlEntities: { [key: string]: string } = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&apos;': "'",
+    '&#39;': "'",
+    '&#x27;': "'",
+    '&#x2019;': "'",
+    '&#8217;': "'",
+  };
+  
+  let decoded = text;
+  for (const [entity, char] of Object.entries(htmlEntities)) {
+    decoded = decoded.replace(new RegExp(entity, 'g'), char);
+  }
+  
+  return decoded;
+}
+
 interface NewsCollectionResult {
   source: string;
   success: boolean;
@@ -441,10 +464,10 @@ export default function AdminPage() {
                 >
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900 dark:text-white mb-1">
-                      {article.title}
+                      {decodeHtmlEntities(article.title)}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
-                      {article.description}
+                      {decodeHtmlEntities(article.description || '')}
                     </p>
                     <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
                       <span>
