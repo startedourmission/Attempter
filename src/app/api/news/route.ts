@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '../../../lib/supabase';
 import { parseRSSFeed } from '../../../lib/rss-parser';
-// import { Article } from '@/types';
+// import { Article } from '../../../types';
 
 export async function GET(request: NextRequest) {
   try {
