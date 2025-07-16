@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Source } from '@/types';
-import { Plus, Trash2, Power, PowerOff, RefreshCw, Settings } from 'lucide-react';
+import { Plus, Trash2, Power, PowerOff, RefreshCw, Settings, Lock } from 'lucide-react';
 
 interface NewsCollectionResult {
   source: string;
@@ -13,6 +13,9 @@ interface NewsCollectionResult {
 }
 
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(false);
   const [collectionResults, setCollectionResults] = useState<NewsCollectionResult[]>([]);
@@ -25,8 +28,34 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    fetchSources();
-  }, []);
+    if (isAuthenticated) {
+      fetchSources();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    
+    try {
+      const response = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setIsAuthenticated(true);
+        setPassword('');
+      } else {
+        setAuthError('잘못된 비밀번호입니다.');
+      }
+    } catch (error) {
+      setAuthError('로그인 중 오류가 발생했습니다.');
+    }
+  };
 
   const fetchSources = async () => {
     try {
@@ -117,6 +146,62 @@ export default function AdminPage() {
     }
   };
 
+  // 로그인 페이지
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="max-w-md w-full mx-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
+            <div className="text-center mb-8">
+              <Lock className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">관리자 로그인</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                IT 뉴스 수집기 관리 페이지
+              </p>
+            </div>
+            
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  관리자 비밀번호
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="비밀번호를 입력하세요"
+                  required
+                />
+              </div>
+              
+              {authError && (
+                <div className="text-red-600 text-sm">{authError}</div>
+              )}
+              
+              <button
+                type="submit"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                로그인
+              </button>
+            </form>
+            
+            <div className="mt-6 text-center">
+              <Link
+                href="/"
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                ← 메인으로 돌아가기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 관리자 페이지 (인증 후)
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -129,12 +214,20 @@ export default function AdminPage() {
                 IT 뉴스 수집기 - 개발자 관리
               </h1>
             </div>
-            <Link
-              href="/"
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-            >
-              ← 메인으로
-            </Link>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setIsAuthenticated(false)}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                로그아웃
+              </button>
+              <Link
+                href="/"
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                ← 메인으로
+              </Link>
+            </div>
           </div>
         </div>
       </header>
