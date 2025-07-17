@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Source, Article } from '../../types';
 import { 
   Settings, Lock, RefreshCw, Plus, Trash2, Power, PowerOff, 
   ExternalLink, Edit2, Star, StarOff, BarChart3, Activity, 
-  Clock, CheckCircle, AlertCircle, Database, FileText
+  Clock, CheckCircle, AlertCircle, Database, FileText, Search, X,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 function decodeHtmlEntities(text: string): string {
@@ -93,15 +94,27 @@ export default function AdminPage() {
   
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [showEditForm, setShowEditForm] = useState(false);
+  
+  // Pagination states
+  const [articlesPage, setArticlesPage] = useState(1);
+  const [articlesPerPage] = useState(20);
+  const [totalArticles, setTotalArticles] = useState(0);
+  
+  // Search states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Article[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchSources();
-      fetchArticles();
+      fetchArticles(articlesPage);
       fetchStats();
       fetchLogs();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, articlesPage]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,9 +328,9 @@ export default function AdminPage() {
     }
   };
 
-  const fetchArticles = async () => {
+  const fetchArticles = async (page: number = 1) => {
     try {
-      const response = await fetch('/api/news?limit=1000');
+      const response = await fetch(`/api/news?page=${page}&limit=${articlesPerPage}`);
       const result = await response.json();
       if (result.success) {
         const articlesData = result.data || [];
@@ -327,6 +340,13 @@ export default function AdminPage() {
           return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
         });
         setArticles(sortedArticles);
+        
+        // Get total count for pagination
+        const countResponse = await fetch('/api/news?limit=1000');
+        const countResult = await countResponse.json();
+        if (countResult.success) {
+          setTotalArticles(countResult.data?.length || 0);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch articles:', error);
@@ -342,7 +362,7 @@ export default function AdminPage() {
       });
       
       if (response.ok) {
-        fetchArticles();
+        fetchArticles(articlesPage);
         fetchStats();
       } else {
         alert('뉴스 삭제 실패');
@@ -378,7 +398,7 @@ export default function AdminPage() {
       if (result.success) {
         setNewArticle({ title: '', description: '', link: '', category: '', tags: '' });
         setShowArticleForm(false);
-        fetchArticles();
+        fetchArticles(articlesPage);
         fetchStats();
         alert('사용자 정의 뉴스가 추가되었습니다.');
       } else {
@@ -446,7 +466,7 @@ export default function AdminPage() {
       if (response.ok) {
         setEditingArticle(null);
         setShowEditForm(false);
-        fetchArticles();
+        fetchArticles(articlesPage);
         alert('뉴스가 수정되었습니다.');
       } else {
         alert('뉴스 수정 실패');
@@ -454,6 +474,83 @@ export default function AdminPage() {
     } catch (error) {
       alert('뉴스 수정 중 오류 발생');
     }
+  };
+
+  // Search functionality
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=100`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setSearchResults(result.data || []);
+        setIsSearching(true);
+      } else {
+        console.error('Search failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    
+    // Debouncing: search after 300ms
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      performSearch(query);
+    }, 300);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setIsSearching(false);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+  };
+
+  // Pagination functionality
+  const totalPages = Math.ceil(totalArticles / articlesPerPage);
+  
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setArticlesPage(newPage);
+    }
+  };
+
+  const getPaginationRange = () => {
+    const range = [];
+    const delta = 2;
+    const start = Math.max(1, articlesPage - delta);
+    const end = Math.min(totalPages, articlesPage + delta);
+    
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+    return range;
+  };
+
+  // Get articles to display (search results or paginated articles)
+  const getDisplayedArticles = () => {
+    if (isSearching) {
+      return searchResults;
+    }
+    return articles;
   };
 
   // 로그인 페이지
@@ -466,7 +563,7 @@ export default function AdminPage() {
               <Lock className="w-12 h-12 text-blue-600 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">관리자 로그인</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                IT 뉴스 수집기 관리 페이지
+                Toynbee News 관리 페이지
               </p>
             </div>
             
@@ -523,7 +620,7 @@ export default function AdminPage() {
               <h1 className="text-lg font-bold text-gray-900 dark:text-white">
                 관리자
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">IT 뉴스 수집기</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Toynbee News</p>
             </div>
           </div>
         </div>
@@ -1143,6 +1240,47 @@ export default function AdminPage() {
                 </div>
               )}
 
+              {/* Search Section */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Search className="w-5 h-5" />
+                  뉴스 검색
+                </h3>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="뉴스 제목, 내용, 태그, 출처로 검색하세요..."
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  {searchQuery && (
+                    <button
+                      onClick={clearSearch}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                
+                {searchLoading && (
+                  <div className="mt-2 text-sm text-blue-600 dark:text-blue-400">
+                    검색 중...
+                  </div>
+                )}
+                
+                {isSearching && (
+                  <div className="mt-2 text-sm text-green-600 dark:text-green-400">
+                    검색 결과: {searchResults.length}개
+                  </div>
+                )}
+              </div>
+
               {/* Articles Table */}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -1163,7 +1301,7 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {articles.slice(0, 50).map((article) => (
+                    {getDisplayedArticles().map((article) => (
                       <tr key={article.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-6 py-4">
                           <div className="max-w-md">
@@ -1229,12 +1367,55 @@ export default function AdminPage() {
                   </tbody>
                 </table>
                 
-                {articles.length === 0 && (
+                {getDisplayedArticles().length === 0 && !searchLoading && (
                   <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                    등록된 뉴스 기사가 없습니다.
+                    {isSearching ? '검색 결과가 없습니다.' : '등록된 뉴스 기사가 없습니다.'}
                   </div>
                 )}
               </div>
+
+              {/* Pagination Controls */}
+              {!isSearching && totalPages > 1 && (
+                <div className="bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      {articlesPerPage * (articlesPage - 1) + 1}-{Math.min(articlesPerPage * articlesPage, totalArticles)} of {totalArticles} 기사
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handlePageChange(articlesPage - 1)}
+                        disabled={articlesPage === 1}
+                        className="p-2 rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      
+                      {getPaginationRange().map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-2 rounded-md text-sm font-medium ${
+                            pageNum === articlesPage
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                      
+                      <button
+                        onClick={() => handlePageChange(articlesPage + 1)}
+                        disabled={articlesPage === totalPages}
+                        className="p-2 rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
