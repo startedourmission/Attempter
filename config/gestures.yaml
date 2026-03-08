@@ -1,0 +1,85 @@
+# Jarvis Hand Gesture Configuration
+# 제스처-액션 매핑 설정
+
+# 기본 제스처 매핑
+default_gestures:
+  # 마우스 제어
+  mouse_move:
+    description: "검지 손가락으로 커서 이동"
+    fingers: [0, 1, 0, 0, 0]  # 검지만 펴기
+
+  left_click:
+    description: "검지 + 중지 모아서 클릭"
+    type: "pinch"
+    fingers: [0, 1, 1, 0, 0]
+
+  right_click:
+    description: "검지 + 중지 + 약지 모아서 우클릭"
+    type: "pinch"
+    fingers: [0, 1, 1, 1, 0]
+
+  scroll_up:
+    description: "손바닥 펴고 위로 밀기"
+    type: "swipe_up"
+    fingers: [1, 1, 1, 1, 1]
+
+  scroll_down:
+    description: "손바닥 펴고 아래로 밀기"
+    type: "swipe_down"
+    fingers: [1, 1, 1, 1, 1]
+
+  drag:
+    description: "엄지 + 검지 핀치 상태로 이동"
+    type: "pinch_hold"
+    fingers: [1, 1, 0, 0, 0]
+
+  # 키보드 단축키
+  volume_up:
+    description: "엄지 위로 (좋아요 제스처)"
+    action: "hotkey"
+    keys: ["volumeup"]
+    fingers: [1, 0, 0, 0, 0]
+    thumb_direction: "up"
+
+  volume_down:
+    description: "엄지 아래로 (싫어요 제스처)"
+    action: "hotkey"
+    keys: ["volumedown"]
+    fingers: [1, 0, 0, 0, 0]
+    thumb_direction: "down"
+
+  tab_switch:
+    description: "검지 + 새끼 (록 제스처) = 탭 전환"
+    action: "hotkey"
+    keys: ["ctrl", "tab"]
+    fingers: [0, 1, 0, 0, 1]
+
+  close_tab:
+    description: "주먹 쥐기 = 탭 닫기"
+    action: "hotkey"
+    keys: ["ctrl", "w"]
+    fingers: [0, 0, 0, 0, 0]
+
+# 제스처 인식 설정
+recognition:
+  # 손 인식 신뢰도 (0.0 ~ 1.0)
+  min_detection_confidence: 0.7
+  min_tracking_confidence: 0.6
+
+  # 제스처 인식 안정화 (프레임 수)
+  gesture_hold_frames: 3
+
+  # 화면 매핑 여백 (0.0 ~ 0.5)
+  screen_margin: 0.1
+
+  # 마우스 이동 스무딩 (1 = 없음, 높을수록 부드러움)
+  smoothing_factor: 5
+
+  # 클릭 판정 거리 (정규화된 좌표 기준)
+  click_distance_threshold: 0.05
+
+  # 스와이프 판정 최소 이동 거리
+  swipe_threshold: 0.08
+
+# 커스텀 제스처 (사용자 추가)
+custom_gestures: {}
